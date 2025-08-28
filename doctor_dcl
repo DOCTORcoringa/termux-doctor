@@ -1,410 +1,100 @@
 import os
-import shutil
-import sys
 import subprocess
-import string
-import random
-import json
-import re
-import time
-import argparse
-import zipfile
-from io import BytesIO
-
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
-from utils.decorators import MessageDecorator
-from utils.provider import APIProvider
-
-try:
-    import requests
-    from colorama import Fore, Style
-except ImportError:
-    print("\tAlgumas dependências não puderam ser importadas (possivelmente não instaladas)")
-    print(
-        "Digite `pip3 install -r requirements.txt` para "
-        " instalar todos os pacotes requeridos")
-    sys.exit(1)
-
-
-def ler_codigos_pais():
-    with open("isdcodes.json") as file:
-        isdcodes = json.load(file)
-    return isdcodes
-
-
-def obter_versao():
-    try:
-        return open(".version", "r").read().strip()
-    except Exception:
-        return '1.0'
-
 
 def limpar_tela():
-    if os.name == "nt":
-        os.system("cls")
-    else:
-        os.system("clear")
+    os.system('clear' if os.name != 'nt' else 'cls')
 
-
-def mostrar_banner():
+def menu():
     limpar_tela()
-    logo = """
-   █████                 ██🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴
-   ██▒▒██                ██
-   ██  ██        ██   ██ ██                 BEM-VINDO, LENDÁRIO!
-   █████▒  ████  ███ ███ █████
-   ██▒▒██ ██  ██ ██▒█▒██ ██▒▒██ 🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴
-   ██  ██ ██  ██ ██ ▒ ██ ██  ██
-   █████▒ ▒████▒ ██   ██ █████▒
-   ▒▒▒▒▒   ▒▒▒▒  ▒▒   ▒▒ ▒▒▒▒▒
-                                         """
-    if ASCII_MODE:
-        logo = ""
-    versao = "Versão: " + __VERSAO__
-    contribuidores = "Contribuidores: " + " ".join(__CONTRIBUIDORES__)
-    print(random.choice(ALL_COLORS) + logo + RESET_ALL)
-    mesgdcrt.SuccessMessage(versao)
-    mesgdcrt.SectionMessage(contribuidores)
-    print()
+    cabecalho = """
+[•]───────────────────────────────────────────[•]
+ |      BRASIL DCL 🇱🇻 TERMUX ASSOCIATE         |       CRIADOR
+ |───────────────────────────────────────────|      DOCTOR
+ | AUTOR : Doctor Coringa                     |      CORINGA
+ |                                           |      
+ | AGRADECIMENTOS : ~ [MR.P3RC1L] [MR.S∆MAx] [MR.B]  |
+ |               ~ [cyber] [%MR.S%] [AldykaPrygh] |
+ |                                           |
+ | Contato Criador: +55 85 9251-1842          |
+[•]───────────────────────────────────────────[•]
 
-
-def verificar_internet():
-    try:
-        requests.get("https://motherfuckingwebsite.com")
-    except Exception:
-        mostrar_banner()
-        mesgdcrt.FailureMessage("Conexão de internet ruim detectada")
-        sys.exit(2)
-
-
-def formatar_telefone(num):
-    num = [n for n in num if n in string.digits]
-    return ''.join(num).strip()
-
-
-def atualizar_zip():
-    sucesso = False
-    if DEBUG_MODE:
-        zip_url = "https://github.com/Hackertrackersj/Tbomb/archive/refs/heads/master.zip"
-        dir_name = "TBomb-dev"
-    else:
-        zip_url = "https://github.com/Hackertrackersj/Tbomb/archive/refs/heads/master.zip"
-        dir_name = "TBomb-master"
-    print(ALL_COLORS[0] + "Baixando ZIP ... " + RESET_ALL)
-    response = requests.get(zip_url)
-    if response.status_code == 200:
-        zip_content = response.content
-        try:
-            with zipfile.ZipFile(BytesIO(zip_content)) as zip_file:
-                for member in zip_file.namelist():
-                    filename = os.path.split(member)
-                    if not filename[1]:
-                        continue
-                    novo_nome = os.path.join(
-                        filename[0].replace(dir_name, "."),
-                        filename[1])
-                    source = zip_file.open(member)
-                    target = open(novo_nome, "wb")
-                    with source, target:
-                        shutil.copyfileobj(source, target)
-            sucesso = True
-        except Exception:
-            mesgdcrt.FailureMessage("Erro ao extrair!!")
-    sys.exit()
-
-
-def atualizar_git():
-    sucesso = False
-    try:
-        print(ALL_COLORS[0] + "ATUALIZANDO " + RESET_ALL, end='')
-        process = subprocess.Popen("git checkout . && git pull ",
-                                   shell=True,
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
-        while process:
-            print(ALL_COLORS[0] + '.' + RESET_ALL, end='')
-            time.sleep(1)
-            returncode = process.poll()
-            if returncode is not None:
-                break
-        sucesso = not process.returncode
-    except Exception:
-        sucesso = False
-    print("\n")
-
-
-def atualizar():
-    if shutil.which('git'):
-        atualizar_git()
-    else:
-        atualizar_zip()
-
-
-def checar_atualizacoes():
-    if DEBUG_MODE:
-        mesgdcrt.WarningMessage(
-            "MODO DEBUG Ativado! Checagem automática de atualizações desativada.")
-        return
-    mesgdcrt.SectionMessage("Checando atualizações")
-    fver = requests.get(
-        "https://github.com/AlexBieber/RevengeBomber2.0/blob/main/.version"
-    ).text.strip()
-    if fver != __VERSAO__:
-        mesgdcrt.WarningMessage("Uma atualização está disponível")
-        mesgdcrt.GeneralMessage("Iniciando atualização...")
-        atualizar()
-    else:
-        mesgdcrt.SuccessMessage("RevengeBomber está atualizado")
-        mesgdcrt.GeneralMessage("Iniciando RevengeBomber")
-
-
-def notificar():
-    try:
-        if DEBUG_MODE:
-            url = "https://github.com/Hackertrackersj/Tbomb/blob/master/.notify"
-        else:
-            url = "https://github.com/Hackertrackersj/Tbomb/blob/master/.notify"
-        noti = requests.get(url).text.upper()
-        if len(noti) > 10:
-            mesgdcrt.SectionMessage("NOTIFICAÇÃO: " + noti)
-            print()
-    except Exception:
-        pass
-
-
-def obter_info_telefone():
-    while True:
-        target = ""
-        cc = input(mesgdcrt.CommandMessage(
-            "Digite o código do seu país (sem +): "))
-        cc = formatar_telefone(cc)
-        if not country_codes.get(cc, False):
-            mesgdcrt.WarningMessage(
-                f"O código do país ({cc}) que você digitou é inválido ou não suportado")
-            continue
-        target = input(mesgdcrt.CommandMessage(
-            "Digite o número alvo: +" + cc + " "))
-        target = formatar_telefone(target)
-        if (len(target) <= 6) or (len(target) >= 12):
-            mesgdcrt.WarningMessage(
-                f"O número de telefone ({target}) que você digitou é inválido")
-            continue
-        return (cc, target)
-
-
-def obter_info_email():
-    mail_regex = r'^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$'
-    while True:
-        target = input(mesgdcrt.CommandMessage("Digite o email alvo: "))
-        if not re.search(mail_regex, target, re.IGNORECASE):
-            mesgdcrt.WarningMessage(
-                f"O email ({target}) que você digitou é inválido")
-            continue
-        return target
-
-
-def imprimir_status(cc, target, sucesso, falhas):
-    total = sucesso + falhas
-    mesgdcrt.SectionMessage("Ataque em andamento - Por favor, aguarde")
-    mesgdcrt.GeneralMessage(
-        "Mantenha-se conectado à internet durante o ataque")
-    mesgdcrt.GeneralMessage(f"Alvo       : {cc} {target}")
-    mesgdcrt.GeneralMessage(f"Enviadas   : {total}")
-    mesgdcrt.GeneralMessage(f"Sucesso    : {sucesso}")
-    mesgdcrt.GeneralMessage(f"Falhas     : {falhas}")
-    mesgdcrt.WarningMessage(
-        "Esta ferramenta foi feita para fins de pesquisa e estudo")
-    mesgdcrt.SuccessMessage("DCL 🇱🇻 foi criado por <🇱🇻SPAM🇱🇻>")
-    mesgdcrt.SuccessMessage(
-        "GitHub do Criador: https://github.com/DOCTORcoringa/DOCTORcoringa")
-
-
-def executar_ataque(mode, cc, target, count, delay, max_threads):
-    api = APIProvider(cc, target, mode, delay=delay)
-    limpar_tela()
-    mesgdcrt.SectionMessage("Preparando ataque - Por favor aguarde")
-    mesgdcrt.GeneralMessage("Mantenha-se conectado à internet durante o ataque")
-    mesgdcrt.GeneralMessage(f"Versão API : {api.api_version}")
-    mesgdcrt.GeneralMessage(f"Alvo       : {cc} {target}")
-    mesgdcrt.GeneralMessage(f"Quantidade : {count}")
-    mesgdcrt.GeneralMessage(f"Threads    : {max_threads} threads")
-    mesgdcrt.GeneralMessage(f"Delay      : {delay} segundos")
-    mesgdcrt.WarningMessage(
-        "Esta ferramenta foi feita para fins de pesquisa e estudo")
-    print()
-    input(mesgdcrt.CommandMessage(
-        "Pressione [CTRL+Z] para pausar o ataque ou [ENTER] para continuar"))
-
-    if len(APIProvider.api_providers) == 0:
-        mesgdcrt.FailureMessage("País ou alvo não suportado")
-        mesgdcrt.GeneralMessage("Sinta-se à vontade para nos contatar")
-        input(mesgdcrt.CommandMessage("Pressione [ENTER] para sair"))
-        mostrar_banner()
-        sys.exit()
-
-    sucesso, falhas = 0, 0
-    while sucesso < count:
-        with ThreadPoolExecutor(max_workers=max_threads) as executor:
-            jobs = []
-            for _ in range(count - sucesso):
-                jobs.append(executor.submit(api.hit))
-
-            for job in as_completed(jobs):
-                resultado = job.result()
-                if resultado is None:
-                    mesgdcrt.FailureMessage(
-                        "Limite de ataques para o alvo atingido")
-                    mesgdcrt.GeneralMessage("Tente novamente mais tarde")
-                    input(mesgdcrt.CommandMessage("Pressione [ENTER] para sair"))
-                    mostrar_banner()
-                    sys.exit()
-                if resultado:
-                    sucesso += 1
-                else:
-                    falhas += 1
-                limpar_tela()
-                imprimir_status(cc, target, sucesso, falhas)
-    print("\n")
-    mesgdcrt.SuccessMessage("Ataque concluído!")
-    time.sleep(1.5)
-    mostrar_banner()
-    sys.exit()
-
-
-def selecionar_no(mode="sms"):
-    mode = mode.lower().strip()
-    try:
-        limpar_tela()
-        mostrar_banner()
-        verificar_internet()
-        checar_atualizacoes()
-        notificar()
-
-        max_limits = {"sms": 100000, "call": 50000, "mail": 200000}
-        cc, target = "", ""
-        if mode in ["sms", "call"]:
-            cc, target = obter_info_telefone()
-            if cc != "91":
-                max_limits.update({"sms": 100000})
-        elif mode == "mail":
-            target = obter_info_email()
-        else:
-            raise KeyboardInterrupt
-
-        limite = max_limits[mode]
-        while True:
-            try:
-                msg = ("Digite a quantidade de {tipo}".format(tipo=mode.upper()) +
-                       " para enviar (Máx {limite}): ".format(limite=limite))
-                count = int(input(mesgdcrt.CommandMessage(msg)).strip())
-                if count > limite or count == 0:
-                    mesgdcrt.WarningMessage(f"Você solicitou {count} {mode.upper()}")
-                    mesgdcrt.GeneralMessage(f"Limite automático ajustado para {limite}")
-                    count = limite
-                delay = float(input(mesgdcrt.CommandMessage("Digite o tempo de delay (em segundos): ")).strip())
-                max_thread_limit = (count // 10) if (count // 10) > 0 else 1
-                max_threads = int(input(mesgdcrt.CommandMessage(f"Digite o número de threads (Recomendado: {max_thread_limit}): ")).strip())
-                max_threads = max_threads if (max_threads > 0) else max_thread_limit
-                if (count < 0 or delay < 0):
-                    raise Exception
-                break
-            except KeyboardInterrupt as ki:
-                raise ki
-            except Exception:
-                mesgdcrt.FailureMessage("Leia as instruções com atenção!!!")
-                print()
-
-        executar_ataque(mode, cc, target, count, delay, max_threads)
-    except KeyboardInterrupt:
-        mesgdcrt.WarningMessage("Interrupção detectada - Saindo...")
-        sys.exit()
-
-
-mesgdcrt = MessageDecorator("icon")
-if sys.version_info[0] != 3:
-    mesgdcrt.FailureMessage("DCL 🇱🇻 funciona apenas com Python v3")
-    sys.exit()
-
-try:
-    country_codes = ler_codigos_pais()["isdcodes"]
-except FileNotFoundError:
-    atualizar()
-
-
-__VERSAO__ = obter_versao()
-__CONTRIBUIDORES__ = ['<🇱🇻SPAM🇱🇻>']
-
-ALL_COLORS = [Fore.GREEN, Fore.RED, Fore.YELLOW, Fore.BLUE,
-              Fore.MAGENTA, Fore.CYAN, Fore.WHITE]
-RESET_ALL = Style.RESET_ALL
-
-ASCII_MODE = False
-DEBUG_MODE = False
-
-descricao = """DCL 🇱🇻 - Sua Aplicação Amigável de Spam
-
-DCL 🇱🇻 pode ser usado para vários propósitos, incluindo:
-\t Expor APIs vulneráveis na Internet
-\t Spam amigável
-\t Testar seu detector de spam e mais...
-
-DCL 🇱🇻 não é destinado a usos maliciosos.
+─────────────────────────────    ─────
+| 1 | BRUTEFORCE FB PHP        |    | D |
+| 2 | BRUTEFORCE FB BR1G4D3    |    | O |
+| 3 | BRUTEFORCE FB iqbalz     |    | C |
+| 4 | BRUTEFORCE FB MBF        |    | T |
+| 5 | FACEBRUTE N1ght420       |    | O |
+| 6 | BRUTEFORCE FB ( root )   |    | R|
+─────────────────────────────    |  |
+| 7 | YAHOO CLONING FACEBOOK   |    ─────
+| 8 | PROFILE GUARD FACEBOOK   |    | C |
+| 9 | REPORT FACEBOOK WORK     |    | O |
+|10 | AUTO REACTION FACEBOOK   |    | R |
+|11 | INFORMATION FACEBOOK     |    | I |
+|12 | BOT KOMEN FACEBOOK       |    | N |
+|13 | AUTOLIKE FACEBOOK        |    | G |
+─────────────────────────────  | A |
+|14 | PHISING FACEBOOK 1       |    |   |
+|15 | PHISING FACEBOOK 2       |    ─────
+|16 | PHISING FACEBOOK 3       |    |  |
+|17 | PHISING FACEBOOK 4       |    |  |
+─────────────────────────────    |  |
+|18 | INSTALL BAHAN DULU COEG  |    | |
+|19 | SAIR/EXIT PROGRAM        |    |     |
+─────────────────────────────    ─────
 """
+    print(cabecalho)
 
-parser = argparse.ArgumentParser(description=descricao,
-                                 epilog='Criado por <🇱🇻SPAM🇱🇻>')
-parser.add_argument("-sms", "--sms", action="store_true",
-                    help="Iniciar DCL 🇱🇻 no modo SMS")
-parser.add_argument("-call", "--call", action="store_true",
-                    help="Iniciar DCL 🇱🇻 no modo chamada")
-parser.add_argument("-mail", "--mail", action="store_true",
-                    help="Iniciar DCL 🇱🇻 no modo email")
-parser.add_argument("-ascii", "--ascii", action="store_true",
-                    help="Mostrar apenas caracteres do conjunto ASCII padrão")
-parser.add_argument("-u", "--update", action="store_true",
-                    help="Atualizar o DCL 🇱🇻")
-parser.add_argument("-c", "--contributors", action="store_true",
-                    help="Mostrar contribuidores atuais")
-parser.add_argument("-v", "--version", action="store_true",
-                    help="Mostrar versão atual do DCL 🇱🇻")
+def executar_opcao(opcao):
+    limpar_tela()
+    print("AGUARDE...")
+
+    comandos = {
+        '1': ['git', 'clone', 'https://github.com/FR13ND8/fbbrute'],
+        '2': ['git', 'clone', 'https://github.com/FR13ND8/Fb-Cracker-v.3'],
+        '3': ['git', 'clone', 'https://github.com/IqbalzNoobs/fb-brute'],
+        '4': ['git', 'clone', 'https://github.com/FR13ND8/mbf'],
+        '5': ['git', 'clone', 'https://github.com/N1ght420/FaceBrute'],
+        '6': ['git', 'clone', 'https://github.com/thelinuxchoice/facebash.git'],
+        '7': ['git', 'clone', 'https://github.com/FR13ND8/EmailVuln'],
+        '8': ['git', 'clone', 'https://github.com/FR13ND8/ProfileGuardFb'],
+        '9': ['git', 'clone', 'https://github.com/IlayTamvan/Report'],
+       '10': ['git', 'clone', 'https://github.com/AMVengeance/FB-React'],
+       '11': ['git', 'clone', 'https://github.com/FR13ND8/InfoFB'],
+       '12': ['git', 'clone', 'https://github.com/Senitopeng/Botkomena.git'],
+       '13': ['git', 'clone', 'https://github.com/FR13ND8/autolike'],
+       '14': ['git', 'clone', 'https://github.com/thelinuxchoice/shellphish.git'],
+       '15': ['git', 'clone', 'https://github.com/thelinuxchoice/blackeye.git'],
+       '16': ['git', 'clone', 'https://github.com/UndeadSec/SocialFish.git'],
+       '17': ['git', 'clone', 'https://github.com/evait-security/weeman.git'],
+       '18': None,
+       '19': 'exit'
+    }
+
+    if opcao in comandos:
+        if opcao == '19':
+            print("Obrigado por usar o programa!")
+            exit()
+        elif opcao == '18':
+            print("Aqui você pode adicionar os comandos de instalação de dependências.")
+            input("Pressione ENTER para voltar ao menu...")
+        else:
+            repo = comandos[opcao]
+            resultado = subprocess.run(repo)
+            if resultado.returncode == 0:
+                pasta = repo[-1].split('/')[-1].replace('.git','')
+                os.chdir(pasta)
+                print(f"Repositório {pasta} clonado. Execute os scripts manualmente.")
+            else:
+                print("Falha ao clonar o repositório.")
+            input("Pressione ENTER para voltar ao menu...")
+    else:
+        print("Opção inválida!")
+        input("Pressione ENTER para tentar novamente.")
 
 
 if __name__ == "__main__":
-    args = parser.parse_args()
-    if args.ascii:
-        ASCII_MODE = True
-        mesgdcrt = MessageDecorator("stat")
-    if args.version:
-        print("Versão: ", __VERSAO__)
-    elif args.contributors:
-        print("Contribuidores: ", " ".join(__CONTRIBUIDORES__))
-    elif args.update:
-        atualizar()
-    elif args.mail:
-        selecionar_no(mode="mail")
-    elif args.call:
-        selecionar_no(mode="call")
-    elif args.sms:
-        selecionar_no(mode="sms")
-    else:
-        choice = ""
-        opcoes_disponiveis = {
-            "1": "SMS",
-            "2": "CALL",
-            "3": "MAIL"
-        }
-        try:
-            while (choice not in opcoes_disponiveis):
-                limpar_tela()
-                mostrar_banner()
-                print("Opções disponíveis:\n")
-                for key, value in opcoes_disponiveis.items():
-                    print(f"[ {key} ] {value} BOMB")
-                print()
-                choice = input(mesgdcrt.CommandMessage("Digite sua escolha: "))
-            selecionar_no(mode=opcoes_disponiveis[choice].lower())
-        except KeyboardInterrupt:
-            mesgdcrt.WarningMessage("Interrupção detectada - Saindo...")
-            sys.exit()
-    sys.exit()
+    while True:
+        menu()
+        escolha = input("Escolha o número: ")
+        executar_opcao(escolha)
