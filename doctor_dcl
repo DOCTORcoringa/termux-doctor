@@ -8,7 +8,7 @@ import random
 import threading
 import requests
 
-# ANSI colors and styles
+# Cores e estilos ANSI
 RED = '\033[91m'
 GREEN = '\033[92m'
 YELLOW = '\033[93m'
@@ -39,26 +39,25 @@ def menu():
         "4 - Phishing / Fake Site",
         "5 - Conteúdo Impróprio / Abusivo",
         "6 - Propaganda Enganosa",
-        "7 - Customizar Alvo (Email, IP, Site)",
         "0 - Sair / Encerrar"
     ]
     for opt in options:
         print(opt)
     while True:
         choice = input(CYAN + "Digite a opção: " + RESET).strip()
-        if choice in [str(i) for i in range(8)]:
+        if choice in [str(i) for i in range(7)]:
             return int(choice)
         else:
             print(RED + "Opção inválida. Tente novamente!" + RESET)
 
-# Conteúdos pré definidos para denúncias
+# Conteúdos pré definidos para mensagens padrão (usadas para visualização e debug)
 conteudos = {
-    1: ["Spam massivo detectado em conta X", "Campanha de spam no grupo Y", "Mensagens não solicitadas em chat Z"],
-    2: ["Bot malicioso detectado em rede", "Atividade automatizada suspeita", "Conta bot reportada"],
-    3: ["Distribuição de vírus malware detectada", "Arquivo infectado compartilhado", "Malware propagado no site X"],
-    4: ["Página phishing identificada", "Link fraudulento detectado", "Site falso denunciado"],
-    5: ["Conteúdo impróprio em postagem", "Material abusivo detectado", "Assédio em chat reportado"],
-    6: ["Propaganda enganosa em anúncio", "Oferta fraudulenta identificada", "Informação falsa propagada"]
+    1: "Spam massivo detectado",
+    2: "Bot malicioso suspeito",
+    3: "Vírus/Malware propagado",
+    4: "Phishing / Fake Site detectado",
+    5: "Conteúdo impróprio / abusivo reportado",
+    6: "Propaganda enganosa identificada"
 }
 
 def progress_bar(total, current, length=30):
@@ -79,14 +78,14 @@ def enviar_denuncia(url, payload, headers):
     try:
         resp = requests.post(url, data=payload, headers=headers, timeout=10)
         if resp.status_code == 200:
-            print(GREEN + "[OK]" + RESET, f"Denúncia enviada: {payload['alvo']}")
+            print(GREEN + "[OK]" + RESET, f"Denúncia enviada para: {payload['alvo']} - Tipo: {payload['tipo']}")
         else:
-            print(RED + "[ERRO]" + RESET, f"Status {resp.status_code}: {payload['alvo']}")
+            print(RED + "[ERRO]" + RESET, f"Status {resp.status_code}: {payload['alvo']} - Tipo: {payload['tipo']}")
     except Exception as e:
         print(RED + "[FALHA]" + RESET, f"Erro: {e}")
 
 def main():
-    clear_screen()  # Limpa o terminal ao iniciar a ferramenta
+    clear_screen()
     banner()
 
     endpoint = "https://example.com/denunciar"  # Troque para seu endpoint real
@@ -101,43 +100,38 @@ def main():
 
     while True:
         opcao = menu()
+
         if opcao == 0:
             print(GREEN + "\nSessão encerrada. Rede protegida com H4CK3R WH1SK3Y!\n" + RESET)
             sys.exit(0)
 
-        if opcao == 7:
-            alvo_custom = input(CYAN + "Insira o alvo para denúncia (email, IP, site): " + RESET).strip()
-            if not alvo_custom:
-                print(RED + "Alvo inválido, retornando ao menu." + RESET)
-                continue
-            lista_conteudo = [alvo_custom]
-        else:
-            lista_conteudo = conteudos.get(opcao, [])
-            if not lista_conteudo:
-                print(RED + "Opção inválida, tente novamente." + RESET)
-                continue
+        # Para todas opções que enviam denúncia, pede alvo e quantidade
+        alvo_number = input(CYAN + "Digite o número ou identificador do alvo para denúncia (ex: telefone, IP, site): " + RESET).strip()
+        if not alvo_number:
+            print(RED + "Alvo inválido! Voltando ao menu..." + RESET)
+            continue
 
         while True:
-            qtd = input(CYAN + "Quantas denúncias enviar? (1-100): " + RESET).strip()
+            qtd = input(CYAN + "Quantas denúncias deseja enviar para esse alvo? (1-100): " + RESET).strip()
             if qtd.isdigit() and 1 <= int(qtd) <= 100:
                 qtd = int(qtd)
                 break
             else:
-                print(RED + "Digite um número entre 1 e 100." + RESET)
+                print(RED + "Digite uma quantidade válida entre 1 e 100." + RESET)
 
-        clear_screen()  # Limpa o terminal toda vez que um novo lote começar
+        clear_screen()
         banner()
 
-        print(YELLOW + f"\nPreparando para enviar {qtd} denúncias rack style...\n" + RESET)
+        print(YELLOW + f"\nPreparando para enviar {qtd} denúncias para alvo '{alvo_number}' do tipo '{conteudos[opcao]}' rack style...\n" + RESET)
 
         evento_parar = threading.Event()
         thread_loading = threading.Thread(target=loading_anim, args=(evento_parar,))
         thread_loading.start()
 
         for i in range(qtd):
-            msg = random.choice(lista_conteudo)
             dados = {
-                "alvo": msg,
+                "alvo": alvo_number,
+                "tipo": conteudos[opcao],
                 "descricao": f"Denúncia automatizada por H4CK3R WH1SK3Y ™ #{i+1}",
                 "id": i+1
             }
@@ -153,7 +147,7 @@ def main():
         evento_parar.set()
         thread_loading.join()
 
-        print(GREEN + f"\n\n[SUCESSO] {qtd} denúncias enviadas com sucesso.\n" + RESET)
+        print(GREEN + f"\n\n[SUCESSO] {qtd} denúncias enviadas para '{alvo_number}' com sucesso.\n" + RESET)
         print(CYAN + BOLD + "Obrigado por manter a web segura com H4CK3R WH1SK3Y ™\n" + RESET)
         input(YELLOW + "Pressione Enter para continuar..." + RESET)
         clear_screen()
