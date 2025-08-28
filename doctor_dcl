@@ -1,96 +1,96 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+import os
 import sys
 import time
 import random
-import requests
 import threading
+import requests
 
-# Cores ANSI e efeitos
+# ANSI colors and styles
 RED = '\033[91m'
 GREEN = '\033[92m'
 YELLOW = '\033[93m'
 CYAN = '\033[96m'
 MAGENTA = '\033[95m'
-RESET = '\033[0m'
 BOLD = '\033[1m'
+RESET = '\033[0m'
 
-# Banner e slogans
+def clear_screen():
+    """Limpa a tela do terminal no Termux/Linux."""
+    os.system('clear')
+
 def banner():
     print(MAGENTA + BOLD)
     print("===============================================")
-    print("    H4CK3R WH1SK3Y ™  |  DENÚNCIA RACK TOOL   ")
+    print("    H4CK3R WH1SK3Y ™  |  DOCTOR RACK TOOL      ")
     print("===============================================")
-    print(GREEN + "      Internet Segura é Internet Livre!        " + RESET)
-    print(CYAN + BOLD + " \"Code the chaos. Protect the net.\" " + RESET)
+    print(GREEN + "       Internet Segura é Internet Livre!       " + RESET)
+    print(CYAN + BOLD + "     \"Protegendo a rede, derrubando o caos\"    " + RESET)
     print("")
 
-# Animação loading (threaded para efeito)
-def loading_animation(stop_event):
-    animation = ['|', '/', '-', '\\']
-    idx = 0
-    while not stop_event.is_set():
-        print(YELLOW + f'\rEnviando sinal rack... {animation[idx % len(animation)]}' + RESET, end='', flush=True)
-        idx += 1
-        time.sleep(0.15)
-    print('\r' + ' ' * 30 + '\r', end='', flush=True)
-
-# Barra de progresso estilizada
-def progress_bar(total, current, bar_length=30):
-    progress = current / total
-    block = int(round(bar_length * progress))
-    text = CYAN + BOLD + f"\rProgresso: [{'#' * block + '-' * (bar_length - block)}] {int(progress * 100)}%" + RESET
-    print(text, end='', flush=True)
-
-# Menu principal
 def menu():
-    print(YELLOW + BOLD + "Escolha sua arma rack style:" + RESET)
+    print(YELLOW + BOLD + "Escolha sua função rack style:" + RESET)
     options = [
-        "1 - Spam massivo detectado",
-        "2 - Bot malicioso suspeito",
-        "3 - Vírus/ Malware propagado",
-        "4 - Phishing / Fake site",
-        "5 - Conteúdo impróprio / Abusivo",
-        "6 - Propaganda enganosa",
-        "7 - Customizar alvo (ex: e-mail, IP, site)",
-        "0 - Sair"
+        "1 - Spam Massivo Detectado",
+        "2 - Bot Malicioso Suspeito",
+        "3 - Vírus/Malware Propagado",
+        "4 - Phishing / Fake Site",
+        "5 - Conteúdo Impróprio / Abusivo",
+        "6 - Propaganda Enganosa",
+        "7 - Customizar Alvo (Email, IP, Site)",
+        "0 - Sair / Encerrar"
     ]
-    for option in options:
-        print(option)
-
+    for opt in options:
+        print(opt)
     while True:
-        choice = input(CYAN + "Digite o número da opção escolhida: " + RESET).strip()
+        choice = input(CYAN + "Digite a opção: " + RESET).strip()
         if choice in [str(i) for i in range(8)]:
             return int(choice)
         else:
-            print(RED + "Opção inválida, tente novamente." + RESET)
+            print(RED + "Opção inválida. Tente novamente!" + RESET)
 
-# Lista de conteúdos prédefinidos rack style
+# Conteúdos pré definidos para denúncias
 conteudos = {
-    1: ["Spam massivo detectado em conta X", "Mensagens não solicitadas em grupo Y", "Campanha massiva de spam detectada"],
-    2: ["Bot malicioso detectado em rede", "Atividade suspeita automatizada", "Usuário com comportamento bot reportado"],
-    3: ["Distribuição de vírus malware em massa", "Arquivo infectado detectado", "Malware propagado em site X"],
-    4: ["Página phishing identificada", "Link fraudulento com intenção maliciosa", "Site_fake reportado para derrubar"],
-    5: ["Conteúdo impróprio em postagem pública", "Material ofensivo e abusivo online", "Assédio verbal detectado"],
-    6: ["Propaganda enganosa em anúncio online", "Oferta falsa detectada em site", "Publicação falsa com informações erradas"]
+    1: ["Spam massivo detectado em conta X", "Campanha de spam no grupo Y", "Mensagens não solicitadas em chat Z"],
+    2: ["Bot malicioso detectado em rede", "Atividade automatizada suspeita", "Conta bot reportada"],
+    3: ["Distribuição de vírus malware detectada", "Arquivo infectado compartilhado", "Malware propagado no site X"],
+    4: ["Página phishing identificada", "Link fraudulento detectado", "Site falso denunciado"],
+    5: ["Conteúdo impróprio em postagem", "Material abusivo detectado", "Assédio em chat reportado"],
+    6: ["Propaganda enganosa em anúncio", "Oferta fraudulenta identificada", "Informação falsa propagada"]
 }
 
-# Envio simulado (POST) para endpoint fictício
-def send_denuncia(target_url, payload, headers):
+def progress_bar(total, current, length=30):
+    done = int(length * current / total)
+    bar = '#' * done + '-' * (length - done)
+    print(CYAN + BOLD + f"\rProgresso: [{bar}] {int(100*current/total)}%" + RESET, end='')
+
+def loading_anim(stop_event):
+    symbols = ['|', '/', '-', '\\']
+    idx = 0
+    while not stop_event.is_set():
+        print(YELLOW + f"\rEnviando rack... {symbols[idx % len(symbols)]}" + RESET, end='', flush=True)
+        idx += 1
+        time.sleep(0.15)
+    print('\r' + ' '*30 + '\r', end='')
+
+def enviar_denuncia(url, payload, headers):
     try:
-        response = requests.post(target_url, data=payload, headers=headers, timeout=10)
-        if response.status_code == 200:
+        resp = requests.post(url, data=payload, headers=headers, timeout=10)
+        if resp.status_code == 200:
             print(GREEN + "[OK]" + RESET, f"Denúncia enviada: {payload['alvo']}")
         else:
-            print(RED + "[ERRO]" + RESET, f"Status {response.status_code}: {payload['alvo']}")
+            print(RED + "[ERRO]" + RESET, f"Status {resp.status_code}: {payload['alvo']}")
     except Exception as e:
         print(RED + "[FALHA]" + RESET, f"Erro: {e}")
 
-# Função principal: orquestra tudo
 def main():
+    clear_screen()  # Limpa o terminal ao iniciar a ferramenta
     banner()
-    target_url = "https://example.com/denunciar"
+
+    endpoint = "https://example.com/denunciar"  # Troque para seu endpoint real
+
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         "Mozilla/5.0 (X11; Linux x86_64)",
@@ -100,60 +100,64 @@ def main():
     ]
 
     while True:
-        escolha = menu()
-        if escolha == 0:
-            print(GREEN + "\nEncerrando sessão. Rede protegida com H4CK3R WH1SK3Y!"+ RESET)
+        opcao = menu()
+        if opcao == 0:
+            print(GREEN + "\nSessão encerrada. Rede protegida com H4CK3R WH1SK3Y!\n" + RESET)
             sys.exit(0)
 
-        # Caso escolha customizar alvo
-        if escolha == 7:
-            alvo_custom = input(CYAN + "Digite o alvo para denúncia (ex: email, IP, site): " + RESET).strip()
+        if opcao == 7:
+            alvo_custom = input(CYAN + "Insira o alvo para denúncia (email, IP, site): " + RESET).strip()
             if not alvo_custom:
-                print(RED + "Alvo inválido. Voltando ao menu..." + RESET)
+                print(RED + "Alvo inválido, retornando ao menu." + RESET)
                 continue
-            conteudo_lista = [alvo_custom]
+            lista_conteudo = [alvo_custom]
         else:
-            conteudo_lista = conteudos.get(escolha, [])
-            if not conteudo_lista:
-                print(RED + "Tipo inválido, tente novamente." + RESET)
+            lista_conteudo = conteudos.get(opcao, [])
+            if not lista_conteudo:
+                print(RED + "Opção inválida, tente novamente." + RESET)
                 continue
 
         while True:
-            qtd = input(CYAN + "Quantas denúncias deseja enviar? (1-100): " + RESET).strip()
+            qtd = input(CYAN + "Quantas denúncias enviar? (1-100): " + RESET).strip()
             if qtd.isdigit() and 1 <= int(qtd) <= 100:
                 qtd = int(qtd)
                 break
             else:
-                print(RED + "Digite um número válido entre 1 e 100." + RESET)
+                print(RED + "Digite um número entre 1 e 100." + RESET)
 
-        print(YELLOW + f"\nPreparando pra enviar {qtd} denúncias rack style...\n" + RESET)
+        clear_screen()  # Limpa o terminal toda vez que um novo lote começar
+        banner()
 
-        stop_event = threading.Event()
-        loader_thread = threading.Thread(target=loading_animation, args=(stop_event,))
-        loader_thread.start()
+        print(YELLOW + f"\nPreparando para enviar {qtd} denúncias rack style...\n" + RESET)
+
+        evento_parar = threading.Event()
+        thread_loading = threading.Thread(target=loading_anim, args=(evento_parar,))
+        thread_loading.start()
 
         for i in range(qtd):
-            alvo = random.choice(conteudo_lista)
-            payload = {
-                "alvo": alvo,
-                "descricao": "Denúncia automatizada por H4CK3R WH1SK3Y ™",
-                "id": i
+            msg = random.choice(lista_conteudo)
+            dados = {
+                "alvo": msg,
+                "descricao": f"Denúncia automatizada por H4CK3R WH1SK3Y ™ #{i+1}",
+                "id": i+1
             }
-            headers = {
+            cabecalhos = {
                 "User-Agent": random.choice(user_agents),
                 "Content-Type": "application/x-www-form-urlencoded"
             }
 
-            send_denuncia(target_url, payload, headers)
+            enviar_denuncia(endpoint, dados, cabecalhos)
             progress_bar(qtd, i+1)
-
             time.sleep(random.uniform(1.2, 2.5))
 
-        stop_event.set()
-        loader_thread.join()
-        print(GREEN + f"\n\n[SUCESSO] Enviadas {qtd} denúncias com payload rack!\n" + RESET)
-        print(CYAN + BOLD + "Obrigado por proteger a web com H4CK3R WH1SK3Y ™" + RESET + "\n")
-        time.sleep(2)
+        evento_parar.set()
+        thread_loading.join()
+
+        print(GREEN + f"\n\n[SUCESSO] {qtd} denúncias enviadas com sucesso.\n" + RESET)
+        print(CYAN + BOLD + "Obrigado por manter a web segura com H4CK3R WH1SK3Y ™\n" + RESET)
+        input(YELLOW + "Pressione Enter para continuar..." + RESET)
+        clear_screen()
+        banner()
 
 if __name__ == "__main__":
     main()
