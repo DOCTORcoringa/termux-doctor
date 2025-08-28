@@ -1,100 +1,159 @@
-import os
-import subprocess
+#!/usr/bin/env python3
+# coding: utf-8
 
-def limpar_tela():
-    os.system('clear' if os.name != 'nt' else 'cls')
+import sys
+import time
+import random
+import requests
+import threading
 
+# Cores ANSI e efeitos
+RED = '\033[91m'
+GREEN = '\033[92m'
+YELLOW = '\033[93m'
+CYAN = '\033[96m'
+MAGENTA = '\033[95m'
+RESET = '\033[0m'
+BOLD = '\033[1m'
+
+# Banner e slogans
+def banner():
+    print(MAGENTA + BOLD)
+    print("===============================================")
+    print("    H4CK3R WH1SK3Y ™  |  DENÚNCIA RACK TOOL   ")
+    print("===============================================")
+    print(GREEN + "      Internet Segura é Internet Livre!        " + RESET)
+    print(CYAN + BOLD + " \"Code the chaos. Protect the net.\" " + RESET)
+    print("")
+
+# Animação loading (threaded para efeito)
+def loading_animation(stop_event):
+    animation = ['|', '/', '-', '\\']
+    idx = 0
+    while not stop_event.is_set():
+        print(YELLOW + f'\rEnviando sinal rack... {animation[idx % len(animation)]}' + RESET, end='', flush=True)
+        idx += 1
+        time.sleep(0.15)
+    print('\r' + ' ' * 30 + '\r', end='', flush=True)
+
+# Barra de progresso estilizada
+def progress_bar(total, current, bar_length=30):
+    progress = current / total
+    block = int(round(bar_length * progress))
+    text = CYAN + BOLD + f"\rProgresso: [{'#' * block + '-' * (bar_length - block)}] {int(progress * 100)}%" + RESET
+    print(text, end='', flush=True)
+
+# Menu principal
 def menu():
-    limpar_tela()
-    cabecalho = """
-[•]───────────────────────────────────────────[•]
- |      BRASIL DCL 🇱🇻 TERMUX ASSOCIATE         |       CRIADOR
- |───────────────────────────────────────────|      DOCTOR
- | AUTOR : Doctor Coringa                     |      CORINGA
- |                                           |      
- | AGRADECIMENTOS : ~ [MR.P3RC1L] [MR.S∆MAx] [MR.B]  |
- |               ~ [cyber] [%MR.S%] [AldykaPrygh] |
- |                                           |
- | Contato Criador: +55 85 9251-1842          |
-[•]───────────────────────────────────────────[•]
+    print(YELLOW + BOLD + "Escolha sua arma rack style:" + RESET)
+    options = [
+        "1 - Spam massivo detectado",
+        "2 - Bot malicioso suspeito",
+        "3 - Vírus/ Malware propagado",
+        "4 - Phishing / Fake site",
+        "5 - Conteúdo impróprio / Abusivo",
+        "6 - Propaganda enganosa",
+        "7 - Customizar alvo (ex: e-mail, IP, site)",
+        "0 - Sair"
+    ]
+    for option in options:
+        print(option)
 
-─────────────────────────────    ─────
-| 1 | BRUTEFORCE FB PHP        |    | D |
-| 2 | BRUTEFORCE FB BR1G4D3    |    | O |
-| 3 | BRUTEFORCE FB iqbalz     |    | C |
-| 4 | BRUTEFORCE FB MBF        |    | T |
-| 5 | FACEBRUTE N1ght420       |    | O |
-| 6 | BRUTEFORCE FB ( root )   |    | R|
-─────────────────────────────    |  |
-| 7 | YAHOO CLONING FACEBOOK   |    ─────
-| 8 | PROFILE GUARD FACEBOOK   |    | C |
-| 9 | REPORT FACEBOOK WORK     |    | O |
-|10 | AUTO REACTION FACEBOOK   |    | R |
-|11 | INFORMATION FACEBOOK     |    | I |
-|12 | BOT KOMEN FACEBOOK       |    | N |
-|13 | AUTOLIKE FACEBOOK        |    | G |
-─────────────────────────────  | A |
-|14 | PHISING FACEBOOK 1       |    |   |
-|15 | PHISING FACEBOOK 2       |    ─────
-|16 | PHISING FACEBOOK 3       |    |  |
-|17 | PHISING FACEBOOK 4       |    |  |
-─────────────────────────────    |  |
-|18 | INSTALL BAHAN DULU COEG  |    | |
-|19 | SAIR/EXIT PROGRAM        |    |     |
-─────────────────────────────    ─────
-"""
-    print(cabecalho)
-
-def executar_opcao(opcao):
-    limpar_tela()
-    print("AGUARDE...")
-
-    comandos = {
-        '1': ['git', 'clone', 'https://github.com/FR13ND8/fbbrute'],
-        '2': ['git', 'clone', 'https://github.com/FR13ND8/Fb-Cracker-v.3'],
-        '3': ['git', 'clone', 'https://github.com/IqbalzNoobs/fb-brute'],
-        '4': ['git', 'clone', 'https://github.com/FR13ND8/mbf'],
-        '5': ['git', 'clone', 'https://github.com/N1ght420/FaceBrute'],
-        '6': ['git', 'clone', 'https://github.com/thelinuxchoice/facebash.git'],
-        '7': ['git', 'clone', 'https://github.com/FR13ND8/EmailVuln'],
-        '8': ['git', 'clone', 'https://github.com/FR13ND8/ProfileGuardFb'],
-        '9': ['git', 'clone', 'https://github.com/IlayTamvan/Report'],
-       '10': ['git', 'clone', 'https://github.com/AMVengeance/FB-React'],
-       '11': ['git', 'clone', 'https://github.com/FR13ND8/InfoFB'],
-       '12': ['git', 'clone', 'https://github.com/Senitopeng/Botkomena.git'],
-       '13': ['git', 'clone', 'https://github.com/FR13ND8/autolike'],
-       '14': ['git', 'clone', 'https://github.com/thelinuxchoice/shellphish.git'],
-       '15': ['git', 'clone', 'https://github.com/thelinuxchoice/blackeye.git'],
-       '16': ['git', 'clone', 'https://github.com/UndeadSec/SocialFish.git'],
-       '17': ['git', 'clone', 'https://github.com/evait-security/weeman.git'],
-       '18': None,
-       '19': 'exit'
-    }
-
-    if opcao in comandos:
-        if opcao == '19':
-            print("Obrigado por usar o programa!")
-            exit()
-        elif opcao == '18':
-            print("Aqui você pode adicionar os comandos de instalação de dependências.")
-            input("Pressione ENTER para voltar ao menu...")
+    while True:
+        choice = input(CYAN + "Digite o número da opção escolhida: " + RESET).strip()
+        if choice in [str(i) for i in range(8)]:
+            return int(choice)
         else:
-            repo = comandos[opcao]
-            resultado = subprocess.run(repo)
-            if resultado.returncode == 0:
-                pasta = repo[-1].split('/')[-1].replace('.git','')
-                os.chdir(pasta)
-                print(f"Repositório {pasta} clonado. Execute os scripts manualmente.")
-            else:
-                print("Falha ao clonar o repositório.")
-            input("Pressione ENTER para voltar ao menu...")
-    else:
-        print("Opção inválida!")
-        input("Pressione ENTER para tentar novamente.")
+            print(RED + "Opção inválida, tente novamente." + RESET)
 
+# Lista de conteúdos prédefinidos rack style
+conteudos = {
+    1: ["Spam massivo detectado em conta X", "Mensagens não solicitadas em grupo Y", "Campanha massiva de spam detectada"],
+    2: ["Bot malicioso detectado em rede", "Atividade suspeita automatizada", "Usuário com comportamento bot reportado"],
+    3: ["Distribuição de vírus malware em massa", "Arquivo infectado detectado", "Malware propagado em site X"],
+    4: ["Página phishing identificada", "Link fraudulento com intenção maliciosa", "Site_fake reportado para derrubar"],
+    5: ["Conteúdo impróprio em postagem pública", "Material ofensivo e abusivo online", "Assédio verbal detectado"],
+    6: ["Propaganda enganosa em anúncio online", "Oferta falsa detectada em site", "Publicação falsa com informações erradas"]
+}
+
+# Envio simulado (POST) para endpoint fictício
+def send_denuncia(target_url, payload, headers):
+    try:
+        response = requests.post(target_url, data=payload, headers=headers, timeout=10)
+        if response.status_code == 200:
+            print(GREEN + "[OK]" + RESET, f"Denúncia enviada: {payload['alvo']}")
+        else:
+            print(RED + "[ERRO]" + RESET, f"Status {response.status_code}: {payload['alvo']}")
+    except Exception as e:
+        print(RED + "[FALHA]" + RESET, f"Erro: {e}")
+
+# Função principal: orquestra tudo
+def main():
+    banner()
+    target_url = "https://example.com/denunciar"
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "Mozilla/5.0 (X11; Linux x86_64)",
+        "Dalvik/2.1.0 (Linux; U; Android 10; SM-G973F)",
+        "curl/7.68.0",
+        "TermuxBot/1.0"
+    ]
+
+    while True:
+        escolha = menu()
+        if escolha == 0:
+            print(GREEN + "\nEncerrando sessão. Rede protegida com H4CK3R WH1SK3Y!"+ RESET)
+            sys.exit(0)
+
+        # Caso escolha customizar alvo
+        if escolha == 7:
+            alvo_custom = input(CYAN + "Digite o alvo para denúncia (ex: email, IP, site): " + RESET).strip()
+            if not alvo_custom:
+                print(RED + "Alvo inválido. Voltando ao menu..." + RESET)
+                continue
+            conteudo_lista = [alvo_custom]
+        else:
+            conteudo_lista = conteudos.get(escolha, [])
+            if not conteudo_lista:
+                print(RED + "Tipo inválido, tente novamente." + RESET)
+                continue
+
+        while True:
+            qtd = input(CYAN + "Quantas denúncias deseja enviar? (1-100): " + RESET).strip()
+            if qtd.isdigit() and 1 <= int(qtd) <= 100:
+                qtd = int(qtd)
+                break
+            else:
+                print(RED + "Digite um número válido entre 1 e 100." + RESET)
+
+        print(YELLOW + f"\nPreparando pra enviar {qtd} denúncias rack style...\n" + RESET)
+
+        stop_event = threading.Event()
+        loader_thread = threading.Thread(target=loading_animation, args=(stop_event,))
+        loader_thread.start()
+
+        for i in range(qtd):
+            alvo = random.choice(conteudo_lista)
+            payload = {
+                "alvo": alvo,
+                "descricao": "Denúncia automatizada por H4CK3R WH1SK3Y ™",
+                "id": i
+            }
+            headers = {
+                "User-Agent": random.choice(user_agents),
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+
+            send_denuncia(target_url, payload, headers)
+            progress_bar(qtd, i+1)
+
+            time.sleep(random.uniform(1.2, 2.5))
+
+        stop_event.set()
+        loader_thread.join()
+        print(GREEN + f"\n\n[SUCESSO] Enviadas {qtd} denúncias com payload rack!\n" + RESET)
+        print(CYAN + BOLD + "Obrigado por proteger a web com H4CK3R WH1SK3Y ™" + RESET + "\n")
+        time.sleep(2)
 
 if __name__ == "__main__":
-    while True:
-        menu()
-        escolha = input("Escolha o número: ")
-        executar_opcao(escolha)
+    main()
